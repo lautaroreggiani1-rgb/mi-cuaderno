@@ -6,6 +6,8 @@
 <title>Mi Cuaderno — Gastos y Semana</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <style>
   :root{
     --paper:#F6F1E4;
@@ -428,21 +430,27 @@
 /* ---------------------------------------------------------
    Almacenamiento
 --------------------------------------------------------- */
-const LS_GASTOS = 'cuaderno_gastos';
-const LS_PLAN = 'cuaderno_plan';
+const firebaseConfig = {
+  apiKey: "AIzaSyD3aeNIfn2tgwqUh6n3uj6iaANJPlJUF1I",
+  authDomain: "mi-cuaderno-19f64.firebaseapp.com",
+  databaseURL: "https://mi-cuaderno-19f64-default-rtdb.firebaseio.com",
+  projectId: "mi-cuaderno-19f64",
+  storageBucket: "mi-cuaderno-19f64.firebasestorage.app",
+  messagingSenderId: "250680845273",
+  appId: "1:250680845273:web:5be46e6ca91287a98fafc8"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const refGastos = db.ref('gastos');
+const refPlan = db.ref('plan');
 
-function loadGastos(){
-  try{ return JSON.parse(localStorage.getItem(LS_GASTOS)) || []; }catch(e){ return []; }
+let gastos = [];
+let plan = {};
+
+function objToArray(obj){
+  if(!obj) return [];
+  return Object.entries(obj).map(([id, val]) => ({ id, ...val }));
 }
-function saveGastos(arr){ localStorage.setItem(LS_GASTOS, JSON.stringify(arr)); }
-
-function loadPlan(){
-  try{ return JSON.parse(localStorage.getItem(LS_PLAN)) || {}; }catch(e){ return {}; }
-}
-function savePlan(obj){ localStorage.setItem(LS_PLAN, JSON.stringify(obj)); }
-
-let gastos = loadGastos();
-let plan = loadPlan();
 
 /* ---------------------------------------------------------
    Tabs
@@ -539,12 +547,10 @@ document.getElementById('g-add').addEventListener('click', ()=>{
     return;
   }
 
-  gastos.push({ id: Date.now(), fecha, desc, tipo, cat, metodo, monto });
-  saveGastos(gastos);
+  refGastos.push({ fecha, desc, tipo, cat, metodo, monto, ts: Date.now() });
   document.getElementById('g-desc').value='';
   document.getElementById('g-monto').value='';
   document.getElementById('g-desc').focus();
-  renderGastos();
 });
 
 document.getElementById('g-filter').addEventListener('change', renderGastos);
@@ -576,9 +582,7 @@ function renderGastos(){
         <button class="del-btn" title="Eliminar">✕</button>
       `;
       li.querySelector('.del-btn').addEventListener('click', ()=>{
-        gastos = gastos.filter(x=>x.id !== g.id);
-        saveGastos(gastos);
-        renderGastos();
+        refGastos.child(g.id).remove();
       });
       lista.appendChild(li);
     });
@@ -650,7 +654,8 @@ function renderPlan(){
     const col = document.createElement('div');
     col.className = 'day-col' + (iso===todayIso ? ' today' : '');
 
-    const tasks = plan[iso] || [];
+    const tasksObj = plan[iso] || {};
+    const tasks = Object.entries(tasksObj);
 
     col.innerHTML = `
       <div class="day-name">${DIAS[i]}</div>
@@ -669,7 +674,7 @@ function renderPlan(){
       empty.textContent = 'Sin tareas';
       ul.appendChild(empty);
     } else {
-      tasks.forEach((t, idx)=>{
+      tasks.forEach(([taskId, t])=>{
         const li = document.createElement('li');
         if(t.done) li.classList.add('done');
         li.innerHTML = `
@@ -678,14 +683,10 @@ function renderPlan(){
           <button class="del-btn">✕</button>
         `;
         li.querySelector('input').addEventListener('change', (e)=>{
-          plan[iso][idx].done = e.target.checked;
-          savePlan(plan);
-          renderPlan();
+          refPlan.child(iso).child(taskId).update({done: e.target.checked});
         });
         li.querySelector('.del-btn').addEventListener('click', ()=>{
-          plan[iso].splice(idx,1);
-          savePlan(plan);
-          renderPlan();
+          refPlan.child(iso).child(taskId).remove();
         });
         ul.appendChild(li);
       });
@@ -696,11 +697,8 @@ function renderPlan(){
     function addTask(){
       const val = input.value.trim();
       if(!val) return;
-      if(!plan[iso]) plan[iso] = [];
-      plan[iso].push({text: val, done:false});
-      savePlan(plan);
+      refPlan.child(iso).push({text: val, done:false});
       input.value='';
-      renderPlan();
     }
     addBtn.addEventListener('click', addTask);
     input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addTask(); });
@@ -716,8 +714,15 @@ document.getElementById('p-today').addEventListener('click', ()=>{ weekOffset=0;
 /* ---------------------------------------------------------
    Init
 --------------------------------------------------------- */
-renderGastos();
-renderPlan();
+refGastos.on('value', (snapshot)=>{
+  gastos = objToArray(snapshot.val());
+  renderGastos();
+});
+
+refPlan.on('value', (snapshot)=>{
+  plan = snapshot.val() || {};
+  renderPlan();
+});
 </script>
 </body>
 </html>
