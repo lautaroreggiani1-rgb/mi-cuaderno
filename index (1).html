@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Cuaderno — Gastos y Semana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F1E4;
+    --paper-line:#E4DCC6;
+    --ink:#2B2620;
+    --ink-soft:#726A5B;
+    --red:#B4463A;
+    --red-soft:#E8D3CE;
+    --green:#5F7A5C;
+    --green-soft:#DCE4D6;
+    --card:#FFFDF7;
+    --shadow: 0 1px 0 rgba(43,38,32,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(var(--paper) 0 31px, var(--paper-line) 31px 32px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  header{
+    padding:36px 24px 18px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  h1{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,5vw,42px);
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:0 0 22px;
+  }
+  nav.tabs{
+    display:flex;
+    gap:8px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:0;
+  }
+  nav.tabs button{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    background:none;
+    border:none;
+    padding:10px 16px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    border-bottom:3px solid transparent;
+    margin-bottom:-2px;
+    transition:color .15s;
+  }
+  nav.tabs button.active{
+    color:var(--ink);
+    border-bottom-color:var(--red);
+    font-weight:600;
+  }
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:24px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    box-shadow:var(--shadow);
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    font-family:'Inter',sans-serif;
+    font-size:19px;
+    margin:0 0 16px;
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .card h2 .num{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    color:var(--red);
+  }
+
+  /* ---- form ---- */
+  .form-row{
+    display:grid;
+    grid-template-columns:130px 1fr 110px 130px 150px 110px auto;
+    gap:10px;
+    align-items:end;
+  }
+  @media (max-width:1000px){
+    .form-row{grid-template-columns:1fr 1fr;}
+  }
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+  }
+  input, select{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, select:focus{
+    outline:2px solid var(--red);
+    outline-offset:1px;
+  }
+  button.primary{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    border-radius:6px;
+    padding:10px 16px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  button.primary:hover{background:var(--red);}
+
+  /* ---- summary ---- */
+  .totals{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .total-chip{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    background:var(--red-soft);
+    color:var(--red);
+    padding:6px 12px;
+    border-radius:20px;
+    display:flex;
+    gap:8px;
+  }
+  .total-chip.grand{
+    background:var(--ink);
+    color:var(--paper);
+    font-weight:600;
+  }
+  .total-chip.ingreso{
+    background:var(--green-soft);
+    color:var(--green);
+  }
+  .total-chip.balance-pos{
+    background:var(--green);
+    color:#fff;
+    font-weight:600;
+  }
+  .total-chip.balance-neg{
+    background:var(--red);
+    color:#fff;
+    font-weight:600;
+  }
+
+  /* ---- ledger list ---- */
+  .filter-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .filter-row select{width:170px;}
+  .filter-row{gap:10px;}
+  ul.ledger{list-style:none;margin:0;padding:0;}
+  ul.ledger li{
+    display:grid;
+    grid-template-columns:82px 1fr 90px 110px 100px 28px;
+    align-items:center;
+    gap:10px;
+    padding:10px 4px;
+    border-bottom:1px solid var(--paper-line);
+    font-size:14px;
+  }
+  ul.ledger li:last-child{border-bottom:none;}
+  ul.ledger .cat-tag{
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  ul.ledger .metodo-tag{
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  ul.ledger .amt{
+    font-family:'Inter',sans-serif;
+    text-align:right;
+    color:var(--red);
+    font-weight:600;
+  }
+  ul.ledger .amt.ingreso{
+    color:var(--green);
+  }
+  ul.ledger .date{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .del-btn{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+  }
+  .del-btn:hover{color:var(--red);}
+  .empty{
+    color:var(--ink-soft);
+    font-size:13px;
+    font-style:italic;
+    padding:14px 4px;
+  }
+
+  /* ---- planner ---- */
+  .week-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .week-nav .range{
+    font-family:'Inter',sans-serif;
+    font-size:18px;
+  }
+  .week-nav .navbtns button{
+    font-family:'Inter',sans-serif;
+    background:none;
+    border:1px solid var(--ink);
+    border-radius:6px;
+    padding:6px 12px;
+    cursor:pointer;
+    margin-left:6px;
+  }
+  .week-nav .navbtns button:hover{background:var(--ink);color:var(--paper);}
+
+  .week-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:10px;
+  }
+  @media (max-width:900px){
+    .week-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  .day-col{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    min-height:180px;
+  }
+  .day-col.today{border-color:var(--green);box-shadow:0 0 0 1px var(--green);}
+  .day-col .day-name{
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+  }
+  .day-col .day-num{
+    font-family:'Inter',sans-serif;
+    font-size:22px;
+    margin-bottom:8px;
+  }
+  .task-list{list-style:none;margin:0;padding:0;flex:1;}
+  .task-list li{
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+    font-size:13px;
+    padding:5px 0;
+    border-bottom:1px dashed var(--paper-line);
+  }
+  .task-list li:last-child{border-bottom:none;}
+  .task-list input[type=checkbox]{margin-top:2px;accent-color:var(--green);}
+  .task-list li.done span{
+    text-decoration:line-through;
+    color:var(--ink-soft);
+  }
+  .task-list .del-btn{font-size:13px;margin-left:auto;}
+  .add-task{
+    display:flex;
+    gap:4px;
+    margin-top:8px;
+  }
+  .add-task input{
+    flex:1;
+    font-size:12px;
+    padding:6px 8px;
+  }
+  .add-task button{
+    background:var(--green);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:0 10px;
+    cursor:pointer;
+    font-size:16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mi Cuaderno</h1>
+  <nav class="tabs">
+    <button class="active" data-view="gastos">Gastos</button>
+    <button data-view="plan">Semana</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ===================== GASTOS ===================== -->
+  <section id="view-gastos" class="view active">
+
+    <div class="card">
+      <h2>Nuevo movimiento</h2>
+      <div class="form-row">
+        <div class="field">
+          <label for="g-fecha">Fecha</label>
+          <input type="text" id="g-fecha" placeholder="dd/mm/aa" maxlength="8" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="g-desc">Descripción</label>
+          <input type="text" id="g-desc" placeholder="Ej: Supermercado">
+        </div>
+        <div class="field">
+          <label for="g-tipo">Tipo</label>
+          <select id="g-tipo">
+            <option value="gasto">Gasto</option>
+            <option value="ingreso">Ingreso</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="g-cat">Categoría</label>
+          <select id="g-cat"></select>
+        </div>
+        <div class="field">
+          <label for="g-metodo">Método de pago</label>
+          <select id="g-metodo">
+            <option>Efectivo</option>
+            <option>Tarjeta de débito</option>
+            <option>Tarjeta de crédito</option>
+            <option>Transferencia</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="g-monto">Monto</label>
+          <input type="number" id="g-monto" placeholder="0" step="0.01" min="0">
+        </div>
+        <button class="primary" id="g-add">Agregar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Resumen <span class="num" id="g-count"></span></h2>
+      <div class="totals" id="g-totals"></div>
+
+      <div class="filter-row">
+        <select id="g-filter-tipo">
+          <option value="">Gastos e ingresos</option>
+          <option value="gasto">Solo gastos</option>
+          <option value="ingreso">Solo ingresos</option>
+        </select>
+        <select id="g-filter">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+
+      <ul class="ledger" id="g-list"></ul>
+    </div>
+
+  </section>
+
+  <!-- ===================== PLANIFICACIÓN ===================== -->
+  <section id="view-plan" class="view">
+    <div class="card">
+      <div class="week-nav">
+        <div class="range" id="p-range">Semana</div>
+        <div class="navbtns">
+          <button id="p-prev">‹ Anterior</button>
+          <button id="p-today">Hoy</button>
+          <button id="p-next">Siguiente ›</button>
+        </div>
+      </div>
+      <div class="week-grid" id="p-grid"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ---------------------------------------------------------
+   Almacenamiento
+--------------------------------------------------------- */
+const LS_GASTOS = 'cuaderno_gastos';
+const LS_PLAN = 'cuaderno_plan';
+
+function loadGastos(){
+  try{ return JSON.parse(localStorage.getItem(LS_GASTOS)) || []; }catch(e){ return []; }
+}
+function saveGastos(arr){ localStorage.setItem(LS_GASTOS, JSON.stringify(arr)); }
+
+function loadPlan(){
+  try{ return JSON.parse(localStorage.getItem(LS_PLAN)) || {}; }catch(e){ return {}; }
+}
+function savePlan(obj){ localStorage.setItem(LS_PLAN, JSON.stringify(obj)); }
+
+let gastos = loadGastos();
+let plan = loadPlan();
+
+/* ---------------------------------------------------------
+   Tabs
+--------------------------------------------------------- */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ---------------------------------------------------------
+   Gastos e ingresos
+--------------------------------------------------------- */
+const fmt = n => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(n);
+
+function isoHoy(){
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${m}-${dd}`;
+}
+
+function fmtFecha(iso){
+  // iso: YYYY-MM-DD -> dd/mm/aa
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+function parseFecha(str){
+  // dd/mm/aa o dd/mm/aaaa -> YYYY-MM-DD (o null si es inválida)
+  const match = str.match(/^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/);
+  if(!match) return null;
+  let [, d, m, y] = match;
+  if(y.length === 2) y = '20' + y;
+  const iso = `${y}-${m}-${d}`;
+  const dt = new Date(iso);
+  if(isNaN(dt.getTime())) return null;
+  return iso;
+}
+
+const fechaInput = document.getElementById('g-fecha');
+fechaInput.value = fmtFecha(isoHoy());
+fechaInput.addEventListener('input', ()=>{
+  let v = fechaInput.value.replace(/[^\d]/g,'');
+  if(v.length > 6) v = v.slice(0,6);
+  let out = v;
+  if(v.length > 4) out = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
+  else if(v.length > 2) out = v.slice(0,2)+'/'+v.slice(2);
+  fechaInput.value = out;
+});
+
+const CATEGORIAS = {
+  gasto: ['Comida','Transporte','Vivienda','Ocio','Salud','Otros'],
+  ingreso: ['Sueldo','Freelance','Venta','Regalo','Otros']
+};
+
+function fillSelect(select, options, includeAll){
+  select.innerHTML = (includeAll ? '<option value="">Todas las categorías</option>' : '') +
+    options.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
+
+const tipoSelect = document.getElementById('g-tipo');
+const catSelect = document.getElementById('g-cat');
+const filtroTipoSelect = document.getElementById('g-filter-tipo');
+const filtroCatSelect = document.getElementById('g-filter');
+
+function actualizarCategoriasForm(){
+  fillSelect(catSelect, CATEGORIAS[tipoSelect.value], false);
+}
+tipoSelect.addEventListener('change', actualizarCategoriasForm);
+actualizarCategoriasForm();
+
+function actualizarCategoriasFiltro(){
+  const tipo = filtroTipoSelect.value;
+  const opciones = tipo ? CATEGORIAS[tipo] : [...new Set([...CATEGORIAS.gasto, ...CATEGORIAS.ingreso])];
+  fillSelect(filtroCatSelect, opciones, true);
+}
+filtroTipoSelect.addEventListener('change', ()=>{ actualizarCategoriasFiltro(); renderGastos(); });
+actualizarCategoriasFiltro();
+
+document.getElementById('g-add').addEventListener('click', ()=>{
+  const fecha = parseFecha(fechaInput.value.trim());
+  const desc = document.getElementById('g-desc').value.trim();
+  const tipo = tipoSelect.value;
+  const cat = catSelect.value;
+  const metodo = document.getElementById('g-metodo').value;
+  const monto = parseFloat(document.getElementById('g-monto').value);
+
+  if(!fecha || !desc || isNaN(monto) || monto <= 0){
+    alert('Completá una fecha válida (dd/mm/aa), descripción y un monto válido.');
+    return;
+  }
+
+  gastos.push({ id: Date.now(), fecha, desc, tipo, cat, metodo, monto });
+  saveGastos(gastos);
+  document.getElementById('g-desc').value='';
+  document.getElementById('g-monto').value='';
+  document.getElementById('g-desc').focus();
+  renderGastos();
+});
+
+document.getElementById('g-filter').addEventListener('change', renderGastos);
+
+function renderGastos(){
+  const filtroTipo = filtroTipoSelect.value;
+  const filtroCat = filtroCatSelect.value;
+  const lista = document.getElementById('g-list');
+  const filtrados = gastos
+    .filter(g => !filtroTipo || g.tipo === filtroTipo)
+    .filter(g => !filtroCat || g.cat === filtroCat)
+    .sort((a,b)=> b.fecha.localeCompare(a.fecha));
+
+  document.getElementById('g-count').textContent = `${gastos.length} registro${gastos.length===1?'':'s'}`;
+
+  lista.innerHTML = '';
+  if(filtrados.length === 0){
+    lista.innerHTML = '<li class="empty">Todavía no hay movimientos cargados.</li>';
+  } else {
+    filtrados.forEach(g=>{
+      const li = document.createElement('li');
+      const signo = g.tipo === 'ingreso' ? '+' : '−';
+      li.innerHTML = `
+        <span class="date">${fmtFecha(g.fecha)}</span>
+        <span>${escapeHtml(g.desc)}</span>
+        <span class="cat-tag">${g.cat}</span>
+        <span class="metodo-tag">${g.metodo || ''}</span>
+        <span class="amt ${g.tipo==='ingreso'?'ingreso':''}">${signo} ${fmt(g.monto)}</span>
+        <button class="del-btn" title="Eliminar">✕</button>
+      `;
+      li.querySelector('.del-btn').addEventListener('click', ()=>{
+        gastos = gastos.filter(x=>x.id !== g.id);
+        saveGastos(gastos);
+        renderGastos();
+      });
+      lista.appendChild(li);
+    });
+  }
+
+  // totales por categoría (gastos), ingresos y balance
+  const porCat = {};
+  let totalGastos = 0, totalIngresos = 0;
+  gastos.forEach(g=>{
+    if(g.tipo === 'ingreso'){
+      totalIngresos += g.monto;
+    } else {
+      totalGastos += g.monto;
+      porCat[g.cat] = (porCat[g.cat]||0) + g.monto;
+    }
+  });
+  const balance = totalIngresos - totalGastos;
+
+  const totalsEl = document.getElementById('g-totals');
+  totalsEl.innerHTML =
+    `<div class="total-chip ${balance>=0?'balance-pos':'balance-neg'}">Balance: ${fmt(balance)}</div>` +
+    `<div class="total-chip ingreso">Ingresos: ${fmt(totalIngresos)}</div>` +
+    `<div class="total-chip grand">Gastos: ${fmt(totalGastos)}</div>` +
+    Object.entries(porCat).map(([cat,val])=>
+      `<div class="total-chip">${cat}: ${fmt(val)}</div>`
+    ).join('');
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ---------------------------------------------------------
+   Planificación semanal
+--------------------------------------------------------- */
+let weekOffset = 0;
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+function getWeekStart(offset){
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7; // lunes=0
+  const monday = new Date(now);
+  monday.setHours(0,0,0,0);
+  monday.setDate(now.getDate() - day + offset*7);
+  return monday;
+}
+
+function isoDate(d){
+  return d.toISOString().slice(0,10);
+}
+
+function renderPlan(){
+  const start = getWeekStart(weekOffset);
+  const end = new Date(start); end.setDate(start.getDate()+6);
+  const optsShort = {day:'numeric', month:'short'};
+  document.getElementById('p-range').textContent =
+    `${start.toLocaleDateString('es-AR', optsShort)} — ${end.toLocaleDateString('es-AR', optsShort)}`;
+
+  const grid = document.getElementById('p-grid');
+  grid.innerHTML = '';
+
+  const todayIso = isoDate(new Date());
+
+  for(let i=0;i<7;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const iso = isoDate(d);
+    const col = document.createElement('div');
+    col.className = 'day-col' + (iso===todayIso ? ' today' : '');
+
+    const tasks = plan[iso] || [];
+
+    col.innerHTML = `
+      <div class="day-name">${DIAS[i]}</div>
+      <div class="day-num">${d.getDate()}</div>
+      <ul class="task-list"></ul>
+      <div class="add-task">
+        <input type="text" placeholder="Agregar tarea…">
+        <button>+</button>
+      </div>
+    `;
+
+    const ul = col.querySelector('.task-list');
+    if(tasks.length===0){
+      const empty = document.createElement('li');
+      empty.className = 'empty';
+      empty.textContent = 'Sin tareas';
+      ul.appendChild(empty);
+    } else {
+      tasks.forEach((t, idx)=>{
+        const li = document.createElement('li');
+        if(t.done) li.classList.add('done');
+        li.innerHTML = `
+          <input type="checkbox" ${t.done?'checked':''}>
+          <span>${escapeHtml(t.text)}</span>
+          <button class="del-btn">✕</button>
+        `;
+        li.querySelector('input').addEventListener('change', (e)=>{
+          plan[iso][idx].done = e.target.checked;
+          savePlan(plan);
+          renderPlan();
+        });
+        li.querySelector('.del-btn').addEventListener('click', ()=>{
+          plan[iso].splice(idx,1);
+          savePlan(plan);
+          renderPlan();
+        });
+        ul.appendChild(li);
+      });
+    }
+
+    const input = col.querySelector('.add-task input');
+    const addBtn = col.querySelector('.add-task button');
+    function addTask(){
+      const val = input.value.trim();
+      if(!val) return;
+      if(!plan[iso]) plan[iso] = [];
+      plan[iso].push({text: val, done:false});
+      savePlan(plan);
+      input.value='';
+      renderPlan();
+    }
+    addBtn.addEventListener('click', addTask);
+    input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addTask(); });
+
+    grid.appendChild(col);
+  }
+}
+
+document.getElementById('p-prev').addEventListener('click', ()=>{ weekOffset--; renderPlan(); });
+document.getElementById('p-next').addEventListener('click', ()=>{ weekOffset++; renderPlan(); });
+document.getElementById('p-today').addEventListener('click', ()=>{ weekOffset=0; renderPlan(); });
+
+/* ---------------------------------------------------------
+   Init
+--------------------------------------------------------- */
+renderGastos();
+renderPlan();
+</script>
+</body>
+</html>
