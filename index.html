@@ -203,6 +203,12 @@
     padding:10px 4px;
     border-bottom:1px solid var(--paper-line);
     font-size:14px;
+    min-width:0;
+  }
+  ul.ledger li > span{
+    min-width:0;
+    overflow-wrap:break-word;
+    word-break:break-word;
   }
   ul.ledger li:last-child{border-bottom:none;}
   ul.ledger .cat-tag{
@@ -284,6 +290,8 @@
     display:flex;
     flex-direction:column;
     min-height:180px;
+    min-width:0;
+    overflow:hidden;
   }
   .day-col.today{border-color:var(--green);box-shadow:0 0 0 1px var(--green);}
   .day-col .day-name{
@@ -306,6 +314,12 @@
     font-size:13px;
     padding:5px 0;
     border-bottom:1px dashed var(--paper-line);
+    min-width:0;
+  }
+  .task-list li span{
+    min-width:0;
+    overflow-wrap:break-word;
+    word-break:break-word;
   }
   .task-list li:last-child{border-bottom:none;}
   .task-list input[type=checkbox]{margin-top:2px;accent-color:var(--green);}
@@ -321,6 +335,7 @@
   }
   .add-task input{
     flex:1;
+    min-width:0;
     font-size:12px;
     padding:6px 8px;
   }
